@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import Order from "../models/orderModel.js";
 import Stripe from "stripe";
 import dotenv from "dotenv";
+import Product from '../models/productModel.js';
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -81,6 +82,17 @@ const updateOrderToPay = asyncHandler(async (req, res) => {
         email_address: req.body.receipt_email,
       };
     }
+
+   //Update Product Count 
+   console.log("order ",order);
+   order.orderItems.forEach(async item => {
+    let prod= await Product.findById(item?.product)
+    if(prod){
+      prod.countInStock -= item.qty
+      await prod.save();
+    }
+    
+  });
 
     const updatedOrder = await order.save();
     res.status(201).json(updatedOrder);
